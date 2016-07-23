@@ -111,6 +111,11 @@ class LLVMSpecializer:
 
         self.end_function()
 
+    def visit_PrimOp(self, node):
+        left = self.visit(node.args[0])
+        right = self.visit(node.args[1])
+        return self.builder.add(left, right)
+
     def visit(self, node):
         return getattr(self, "visit_" + type(node).__name__)(node)
 
@@ -135,6 +140,8 @@ def jitify(func):
     signature = inference.visit(ast)
     mgu = coreast.solve(inference.constraints)
     inferred_type = coreast.apply_solution(mgu, signature)
+
+    print(func, inferred_type, file=sys.stderr)
 
     cache = {}
 
@@ -165,6 +172,8 @@ def jitify(func):
 
         native_module.verify()
 
+        print(key, spec_fun, "\n", native_module, file=sys.stderr)
+
         _engine.add_module(native_module)
         _engine.finalize_object()
 
@@ -187,8 +196,13 @@ def identity(a):
 def constant():
     return 32
 
+@jitify
+def add_two(x):
+    return x + 2
+
 if __name__ == "__main__":
     print(constant())
     print(constant())
     print(identity(42))
     print(identity(52))
+    print(add_two(2))

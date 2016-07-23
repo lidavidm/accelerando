@@ -109,6 +109,13 @@ class PythonVisitor(ast.NodeVisitor):
     def visit_Return(self, node):
         return Return(self.visit(node.value))
 
+    def visit_BinOp(self, node):
+        if isinstance(node.op, ast.Add):
+            op = "+"
+        else:
+            raise ValueError("Unsupported op:", node.op)
+        return PrimOp(op, [self.visit(node.left), self.visit(node.right)])
+
 
 def transform(code):
     return PythonVisitor().transform(code)
@@ -230,6 +237,15 @@ class InferenceVisitor:
 
         return TFun(arg_types, self.return_type)
 
+    def visit_PrimOp(self, node):
+        if node.op == "+":
+            left = self.visit(node.args[0])
+            right = self.visit(node.args[1])
+            self.constraints.append((left, right))
+            return right
+        else:
+            raise ValueError("Unsupported primop: " + repr(node))
+
 
 # Actual solver - Robinson's algorithm
 def empty_solution():
@@ -255,7 +271,7 @@ def apply_solution_equations(solution, equations):
 
 def unify_types(x, y):
     if isinstance(x, TCon) and isinstance(y, TCon) and x == y:
-        return empty()
+        return empty_solution()
     elif isinstance(x, TFun) and isinstance(y, TFun):
         if len(x.arg_types) != len(y.arg_types):
             raise Exception("Mismatch in number of arguments")
@@ -303,20 +319,16 @@ def compose_solutions(sol1, sol2):
     return union(sol1, sol3)
 
 
-# def test(a):
-#     return a
+def test(a):
+    return a + 2
 
-# def test():
-#     return 2
-
-# print(Apply(Function("main", [], [Return(Integer(42))]), []))
-# ut = transform(test)
-# print(ut)
-# inference = InferenceVisitor()
-# signature = inference.visit(ut)
-# mgu = solve(inference.constraints)
-# print(signature)
-# print(inference.constraints)
-# print(ut)
-# print(mgu)
-# print(apply_solution(mgu, signature))
+if __name__ == "__main__":
+    ut = transform(test)
+    print("Untyped:", ut)
+    inference = InferenceVisitor()
+    signature = inference.visit(ut)
+    mgu = solve(inference.constraints)
+    print("Untyped:", signature)
+    print("Constraints:", inference.constraints)
+    print("MGU:", mgu)
+    print("Inferrred:", apply_solution(mgu, signature))
