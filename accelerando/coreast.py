@@ -2,6 +2,7 @@ import ast
 import collections
 import inspect
 import string
+import textwrap
 import types
 
 from typing import List, Tuple
@@ -105,7 +106,7 @@ class PythonVisitor(ast.NodeVisitor):
         if isinstance(code, (types.FunctionType, types.ModuleType)):
             code = inspect.getsource(code)
 
-        parsed = ast.parse(code)
+        parsed = ast.parse(textwrap.dedent(code))
         return self.visit(parsed)
 
     def visit_Module(self, node):
@@ -355,21 +356,3 @@ def union(sol1, sol2):
 def compose_solutions(sol1, sol2):
     sol3 = { t: apply_solution(sol1, u) for t, u in sol2.items() }
     return union(sol1, sol3)
-
-
-def test(a):
-    return a + 2
-
-def false(a):
-    return False
-
-if __name__ == "__main__":
-    ut = transform(false)
-    print("Untyped:", ut)
-    inference = InferenceVisitor()
-    signature = inference.visit(ut)
-    mgu = solve(inference.constraints)
-    print("Untyped:", signature)
-    print("Constraints:", inference.constraints)
-    print("MGU:", mgu)
-    print("Inferrred:", apply_solution(mgu, signature))

@@ -211,36 +211,3 @@ def jitify(func):
         return cfunc(*args)
 
     return _wrapper
-
-
-@jitify
-def identity(a):
-    return a
-
-@jitify
-def constant():
-    return 32
-
-@jitify
-def add_two(x):
-    return x + 2
-
-@jitify
-def double(x):
-    return x + x
-
-@jitify
-def false(x):
-    return False
-
-if __name__ == "__main__":
-    # print(constant())
-    # print(constant())
-    print(identity(42))
-    print(identity(5.2))
-    print(identity(True))
-    print(identity(False))
-    # print(add_two(2))
-    # print(double(5.0))
-    # print(double(5))
-    print(false(2))
