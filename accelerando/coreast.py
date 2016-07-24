@@ -360,8 +360,11 @@ def compose_solutions(sol1, sol2):
 def test(a):
     return a + 2
 
+def false(a):
+    return False
+
 if __name__ == "__main__":
-    ut = transform(test)
+    ut = transform(false)
     print("Untyped:", ut)
     inference = InferenceVisitor()
     signature = inference.visit(ut)

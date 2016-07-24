@@ -4,7 +4,7 @@ import sys
 import llvmlite.ir as ll
 import llvmlite.binding as llvm
 
-import coreast
+from . import coreast
 
 
 llvm.initialize()
