@@ -20,6 +20,7 @@ _llvm_type_map = {
     coreast.int_type: int_type,
     coreast.float_type: float_type,
     coreast.void_type: ll.VoidType,
+    coreast.bool_type: ll.IntType(1),
 }
 
 
@@ -27,6 +28,7 @@ _ctypes_type_map = {
     coreast.int_type: ctypes.c_int64,
     coreast.void_type: ctypes.c_void_p,
     coreast.float_type: ctypes.c_float,
+    coreast.bool_type: ctypes.c_bool,
 }
 
 
@@ -92,6 +94,13 @@ class LLVMSpecializer:
         ty = self.specialize(node)
         return ll.Constant(ty, node.val)
 
+    def visit_Bool(self, node):
+        ty = self.specialize(node)
+        if node.val is True:
+            return ll.Constant(ty, 1)
+        else:
+            return ll.Constant(ty, 0)
+
     def visit_Var(self, node):
         return self.builder.load(self.locals[node.name])
 
@@ -140,6 +149,8 @@ def type_for_value(value):
             raise ValueError("Integer out of bounds")
     elif isinstance(value, float):
         return coreast.float_type
+    elif isinstance(value, bool):
+        return coreast.bool_type
 
     raise ValueError("Unsupported type: " + repr(type(value)))
 
@@ -218,11 +229,18 @@ def add_two(x):
 def double(x):
     return x + x
 
+@jitify
+def false(x):
+    return False
+
 if __name__ == "__main__":
-    print(constant())
-    print(constant())
+    # print(constant())
+    # print(constant())
     print(identity(42))
-    print(identity(52))
-    print(add_two(2))
-    print(double(5.0))
-    print(double(5))
+    print(identity(5.2))
+    print(identity(True))
+    print(identity(False))
+    # print(add_two(2))
+    # print(double(5.0))
+    # print(double(5))
+    print(false(2))

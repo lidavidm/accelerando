@@ -55,6 +55,15 @@ class Float(Node):
         self.ty = ty
 
 
+class Bool(Node):
+    _fields = ["val"]
+
+    def __init__(self, val: int, ty=None, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.val = val
+        self.ty = ty
+
+
 class PrimOp(Node):
     _fields = ["op", "args"]
 
@@ -111,6 +120,14 @@ class PythonVisitor(ast.NodeVisitor):
         elif isinstance(node.n, float):
             return Float(node.n)
         raise NotImplementedError
+
+    def visit_NameConstant(self, node):
+        if node.value is True:
+            return Bool(True)
+        elif node.value is False:
+            return Bool(False)
+        else:
+            raise NotImplementedError("NameConstant value: " + repr(node.value))
 
     def visit_FunctionDef(self, node):
         body = list(map(self.visit, node.body))
@@ -204,6 +221,7 @@ def free_tvars(ty):
 
 int_type = TCon("int")
 float_type = TCon("float")
+bool_type = TCon("bool")
 void_type = TCon("void")
 
 
@@ -233,6 +251,10 @@ class InferenceVisitor:
     def visit_Float(self, node):
         node.ty = float_type
         return float_type
+
+    def visit_Bool(self, node):
+        node.ty = bool_type
+        return bool_type
 
     def visit_Return(self, node):
         ty = self.visit(node.val)
