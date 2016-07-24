@@ -46,6 +46,15 @@ class Integer(Node):
         self.ty = ty
 
 
+class Float(Node):
+    _fields = ["val"]
+
+    def __init__(self, val: int, ty=None, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.val = val
+        self.ty = ty
+
+
 class PrimOp(Node):
     _fields = ["op", "args"]
 
@@ -99,6 +108,8 @@ class PythonVisitor(ast.NodeVisitor):
     def visit_Num(self, node):
         if isinstance(node.n, int):
             return Integer(node.n)
+        elif isinstance(node.n, float):
+            return Float(node.n)
         raise NotImplementedError
 
     def visit_FunctionDef(self, node):
@@ -192,6 +203,7 @@ def free_tvars(ty):
 
 
 int_type = TCon("int")
+float_type = TCon("float")
 void_type = TCon("void")
 
 
@@ -217,6 +229,10 @@ class InferenceVisitor:
     def visit_Integer(self, node):
         node.ty = int_type
         return int_type
+
+    def visit_Float(self, node):
+        node.ty = float_type
+        return float_type
 
     def visit_Return(self, node):
         ty = self.visit(node.val)

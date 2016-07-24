@@ -6,22 +6,27 @@ import llvmlite.binding as llvm
 
 import coreast
 
-int_type = ll.IntType(64)
-int_type_ct = ctypes.c_int64
 
 llvm.initialize()
 llvm.initialize_native_target()
 llvm.initialize_native_asmprinter()
 
 
+int_type = ll.IntType(64)
+float_type = ll.FloatType()
+
+
 _llvm_type_map = {
     coreast.int_type: int_type,
+    coreast.float_type: float_type,
     coreast.void_type: ll.VoidType,
 }
 
+
 _ctypes_type_map = {
-    coreast.int_type: int_type_ct,
+    coreast.int_type: ctypes.c_int64,
     coreast.void_type: ctypes.c_void_p,
+    coreast.float_type: ctypes.c_float,
 }
 
 
@@ -83,6 +88,10 @@ class LLVMSpecializer:
         ty = self.specialize(node)
         return ll.Constant(ty, node.val)
 
+    def visit_Float(self, node):
+        ty = self.specialize(node)
+        return ll.Constant(ty, node.val)
+
     def visit_Var(self, node):
         return self.builder.load(self.locals[node.name])
 
@@ -114,7 +123,10 @@ class LLVMSpecializer:
     def visit_PrimOp(self, node):
         left = self.visit(node.args[0])
         right = self.visit(node.args[1])
-        return self.builder.add(left, right)
+        if left.type == float_type:
+            return self.builder.fadd(left, right)
+        else:
+            return self.builder.add(left, right)
 
     def visit(self, node):
         return getattr(self, "visit_" + type(node).__name__)(node)
@@ -126,6 +138,8 @@ def type_for_value(value):
             return coreast.int_type
         else:
             raise ValueError("Integer out of bounds")
+    elif isinstance(value, float):
+        return coreast.float_type
 
     raise ValueError("Unsupported type: " + repr(type(value)))
 
@@ -180,7 +194,7 @@ def jitify(func):
         name = native_module.get_function(key).name
         fptr = _engine.get_function_address(name)
         ctypes_arg_types = [to_ctypes(ty) for ty in spec_arg_types]
-        cfunc = ctypes.CFUNCTYPE(int_type_ct, *ctypes_arg_types)(fptr)
+        cfunc = ctypes.CFUNCTYPE(to_ctypes(spec_return_type), *ctypes_arg_types)(fptr)
         cfunc.__name__ = func.__name__
         cache[key] = cfunc
         return cfunc(*args)
@@ -200,9 +214,15 @@ def constant():
 def add_two(x):
     return x + 2
 
+@jitify
+def double(x):
+    return x + x
+
 if __name__ == "__main__":
     print(constant())
     print(constant())
     print(identity(42))
     print(identity(52))
     print(add_two(2))
+    print(double(5.0))
+    print(double(5))
