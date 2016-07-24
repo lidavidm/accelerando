@@ -136,7 +136,7 @@ def unique_names():
     n = 0
     while True:
         for char in string.ascii_lowercase:
-            yield "'a" + (str(n) if n > 0 else "")
+            yield "'" + char + (str(n) if n > 0 else "")
         n += 1
 
 
