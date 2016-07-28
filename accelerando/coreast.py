@@ -96,6 +96,15 @@ class Return(Node):
         self.val = val
 
 
+class Assign(Node):
+    _fields = ["var", "val"]
+
+    def __init__(self, var: Var, val: Node, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.var = var
+        self.val = val
+
+
 class Apply(Node):
     _fields = ["fn", "args"]
 
@@ -151,6 +160,11 @@ class PythonVisitor(ast.NodeVisitor):
         else:
             raise ValueError("Unsupported op:", node.op)
         return PrimOp(op, [self.visit(node.left), self.visit(node.right)])
+
+    def visit_Assign(self, node):
+        if len(node.targets) != 1:
+            raise NotImplementedError("Not implemented: multiple assignment")
+        return Assign(self.visit(node.targets[0]), self.visit(node.value))
 
 
 def transform(code):
