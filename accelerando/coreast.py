@@ -310,6 +310,25 @@ class InferenceVisitor:
         ty = self.visit(node.val)
         self.constraints.append((ty, self.return_type))
 
+    def visit_Assign(self, node):
+        ty = self.visit(node.val)
+        if node.var.name in self.env:
+            self.constraints.append((ty, self.env[node.var.name]))
+        else:
+            self.env[node.var.name] = self.new_var()
+            self.constraints.append((ty, self.env[node.var.name]))
+            node.var.ty = self.env[node.var.name]
+
+    def visit_ForLoop(self, node):
+        self.env[node.var.name] = self.new_var()
+        self.constraints.append((self.env[node.var.name], int_type))
+
+        end_ty = self.visit(node.end)
+        self.constraints.append((end_ty, int_type))
+
+        for b in node.body:
+            self.visit(b)
+
     def visit_Function(self, node):
         self.return_type = self.new_var()
         arg_types = []
