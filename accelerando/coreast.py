@@ -105,6 +105,18 @@ class Assign(Node):
         self.val = val
 
 
+class ForLoop(Node):
+    _fields = ["var", "start", "end", "step", "body"]
+
+    def __init__(self, var: Var, start: Node, end: Node, step: Node, body: List[Node], **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.var = var
+        self.start = start
+        self.end = end
+        self.step = step
+        self.body = body
+
+
 class Apply(Node):
     _fields = ["fn", "args"]
 
@@ -165,6 +177,22 @@ class PythonVisitor(ast.NodeVisitor):
         if len(node.targets) != 1:
             raise NotImplementedError("Not implemented: multiple assignment")
         return Assign(self.visit(node.targets[0]), self.visit(node.value))
+
+    def visit_For(self, node):
+        if not isinstance(node.iter, ast.Call):
+            raise ValueError("Cannot iterate over " + repr(node.iter))
+
+        if node.iter.func.id != "range":
+            raise ValueError("Must iterate over range, not " + node.iter.func.id)
+
+        if len(node.iter.args) != 1:
+            raise NotImplementedError("Not implemented: iteration not over range(n)")
+
+        var = self.visit(node.target)
+        start = Integer(0)
+        end = self.visit(node.iter.args[0])
+        step = Integer(1)
+        return ForLoop(var, start, end, step, [self.visit(b) for b in node.body])
 
 
 def transform(code):
