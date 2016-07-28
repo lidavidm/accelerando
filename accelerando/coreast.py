@@ -19,6 +19,10 @@ class Node:
         return "{}({})".format(self.__class__.__name__, fields)
 
 
+class Noop(Node):
+    pass
+
+
 class Var(Node):
     _fields = ["name", "ty"]
 
@@ -108,6 +112,9 @@ class PythonVisitor(ast.NodeVisitor):
 
         parsed = ast.parse(textwrap.dedent(code))
         return self.visit(parsed)
+
+    def visit_Pass(self, node):
+        return Noop()
 
     def visit_Module(self, node):
         return self.visit(node.body[0])
