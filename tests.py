@@ -34,3 +34,18 @@ class TestIdentity(unittest.TestCase):
     def test_integers(self):
         for i in range(-100, 100):
             self.assertEqual(i, self.identity(i))
+
+
+class TestAssign(unittest.TestCase):
+    def setUp(self):
+        def assign1(x, y):
+            z = x + 2
+            h = z + y
+            return h
+        self.assign1 = assign1
+        self.assign1j = accelerando.jitify(assign1)
+
+    def test_integers(self):
+        for i in range(-128, 128):
+            for j in range(-128, 128):
+                self.assertEqual(self.assign1(i, j), self.assign1j(i, j))
