@@ -110,6 +110,21 @@ class LLVMSpecializer:
 
         self.builder.branch(self.exit_block)
 
+    def visit_Assign(self, node):
+        name = node.var.name
+        val = self.visit(node.val)
+
+        if name in self.locals:
+            self.builder.store(val, self.locals[name])
+        else:
+            ty = self.specialize(node)
+            var = self.builder.alloca(ty)
+            self.builder.store(val, var)
+            self.locals[name] = var
+
+        return self.locals[name]
+
+
     def visit_Function(self, node):
         return_type = to_llvm_type(self.return_type)
         arg_types = [to_llvm_type(ty) for ty in self.arg_types]

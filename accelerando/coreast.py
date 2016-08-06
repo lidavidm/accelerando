@@ -32,16 +32,6 @@ class Var(Node):
         self.ty = ty
 
 
-class Assign(Node):
-    _fields = ["lhs", "rhs", "ty"]
-
-    def __init__(self, lhs: Var, rhs: Node, ty=None, **kwargs) -> None:
-        super().__init__(**kwargs)
-        self.lhs = lhs
-        self.rhs = rhs
-        self.ty = ty
-
-
 class Integer(Node):
     _fields = ["val"]
 
@@ -97,12 +87,13 @@ class Return(Node):
 
 
 class Assign(Node):
-    _fields = ["var", "val"]
+    _fields = ["var", "val", "ty"]
 
-    def __init__(self, var: Var, val: Node, **kwargs) -> None:
+    def __init__(self, var: Var, val: Node, ty=None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.var = var
         self.val = val
+        self.ty = ty
 
 
 class ForLoop(Node):
@@ -317,7 +308,7 @@ class InferenceVisitor:
         else:
             self.env[node.var.name] = self.new_var()
             self.constraints.append((ty, self.env[node.var.name]))
-            node.var.ty = self.env[node.var.name]
+            node.ty = node.var.ty = self.env[node.var.name]
 
     def visit_ForLoop(self, node):
         self.env[node.var.name] = self.new_var()
